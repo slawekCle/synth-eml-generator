@@ -1,0 +1,45 @@
+From: Test Sender <sender@example.net>
+To: recipient@example.com
+Subject: Testowa =?utf-8?b?d2lhZG9tb8WbxIcgKGJlenBpZWN6bmEpIOKAkw==?=
+ powiadomienie
+Date: Wed, 17 Dec 2025 15:56:05 +0000
+Message-ID: <176598696568.12396.2423688637494112512@example.net>
+MIME-Version: 1.0
+Received: from smtp-client.example.net (mx1.example.net [192.0.2.10])	by
+ mailhub.example.net with ESMTP id 422e06fc6362	for <recipient@example.com>;
+	Wed, 17 Dec 2025 15:56:05 +0000
+Received: from smtp-client.example.net (mailhub.example.net [203.0.113.77])	by
+ edge.example.net with ESMTP id 3f2f36ed6f67	for <recipient@example.com>;	Wed,
+ 17 Dec 2025 15:54:05 +0000
+Received: from smtp-client.example.net (edge.example.net [198.51.100.23])	by
+ mx2.example.net with ESMTP id ad38c96b1903	for <recipient@example.com>;	Wed,
+ 17 Dec 2025 15:52:05 +0000
+Received: from smtp-client.example.net (mx2.example.net [192.0.2.10])	by
+ mx1.example.net with ESMTP id bea7c947e746	for <recipient@example.com>;	Wed,
+ 17 Dec 2025 15:50:05 +0000
+Content-Type: multipart/alternative;
+ boundary="===============1247105476930112678=="
+
+--===============1247105476930112678==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Cześć,
+
+To jest bezpieczna, syntetyczna wiadomość do testów filtrów.
+Nie zawiera linków ani złośliwych załączników.
+
+Pozdrawiam,
+Zespół Testów
+
+--===============1247105476930112678==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<html><body><p>Cze=C5=9B=C4=87,</p><p>To jest <b>bezpieczna</b>, syntetyczna =
+wiadomo=C5=9B=C4=87 do test=C3=B3w filtr=C3=B3w.</p><p>Nie zawiera link=C3=B3=
+w ani z=C5=82o=C5=9Bliwych za=C5=82=C4=85cznik=C3=B3w.</p><p>Pozdrawiam,<br/>=
+Zesp=C3=B3=C5=82 Test=C3=B3w</p></body></html>
+
+--===============1247105476930112678==--
