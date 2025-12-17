@@ -1,116 +1,192 @@
 from __future__ import annotations
 
-from email.message import EmailMessage
-from email.generator import BytesGenerator
+import secrets
+from datetime import datetime, timedelta, timezone
 from email import policy
+from email.generator import BytesGenerator
+from email.message import EmailMessage
 from email.utils import format_datetime, make_msgid
 from pathlib import Path
-from datetime import datetime, timezone, timedelta
-import secrets
+
+from faker import Faker
 
 
-def build_received_chain(
-    helo: str,
-    recipient: str,
-    hops: int = 3,
-    start_time: datetime | None = None,
-) -> list[str]:
-    """
-    Generate a plausible chain of Received: headers.
-    Note: In real life, each hop adds its own Received. Here we simulate it.
-    Uses documentation IP ranges (RFC 5737 / RFC 3849).
-    """
-    if start_time is None:
-        start_time = datetime.now(timezone.utc)
+class ReceivedChainBuilder:
+    """Build a plausible chain of ``Received`` headers."""
 
-    doc_ipv4 = ["192.0.2.10", "198.51.100.23", "203.0.113.77"]
-    doc_hosts = ["mx1.example.net", "mx2.example.net", "edge.example.net", "mailhub.example.net"]
+    def __init__(
+        self,
+        *,
+        helo: str = "smtp-client.example.net",
+        hops: int = 3,
+    ) -> None:
+        self.helo = helo
+        self.hops = hops
 
-    # We'll build older -> newer timestamps, but headers must be inserted newest first.
-    t = start_time - timedelta(minutes=2 * hops)
-    received_values: list[str] = []
+    def build(
+        self,
+        recipient: str,
+        *,
+        start_time: datetime | None = None,
+        hops: int | None = None,
+    ) -> list[str]:
+        """
+        Generate a plausible chain of Received headers.
 
-    for i in range(hops):
-        t = t + timedelta(minutes=2)  # monotonic time
-        ip = doc_ipv4[i % len(doc_ipv4)]
-        by_host = doc_hosts[i % len(doc_hosts)]
-        frm_host = doc_hosts[(i + 1) % len(doc_hosts)]
-        esmtp_id = secrets.token_hex(6)
+        Newest headers are placed first to mimic a real SMTP chain.
+        """
 
-        # A single Received header value (no "Received:" prefix here).
-        # We include line breaks + indentation for proper folding.
-        value = (
-            f"from {helo} ({frm_host} [{ip}])"
-            f"\tby {by_host} with ESMTP id {esmtp_id}"
-            f"\tfor <{recipient}>;"
-            f"\t{format_datetime(t)}"
+        effective_start = start_time or datetime.now(timezone.utc)
+        hop_count = hops if hops is not None else self.hops
+
+        doc_ipv4 = ["192.0.2.10", "198.51.100.23", "203.0.113.77"]
+        doc_hosts = ["mx1.example.net", "mx2.example.net", "edge.example.net", "mailhub.example.net"]
+
+        timestamp = effective_start - timedelta(minutes=2 * hop_count)
+        received_values: list[str] = []
+
+        for i in range(hop_count):
+            timestamp += timedelta(minutes=2)
+            ip = doc_ipv4[i % len(doc_ipv4)]
+            by_host = doc_hosts[i % len(doc_hosts)]
+            frm_host = doc_hosts[(i + 1) % len(doc_hosts)]
+            esmtp_id = secrets.token_hex(6)
+
+            value = (
+                f"from {self.helo} ({frm_host} [{ip}])"
+                f"\tby {by_host} with ESMTP id {esmtp_id}"
+                f"\tfor <{recipient}>;"
+                f"\t{format_datetime(timestamp)}"
+            )
+            received_values.append(value)
+
+        return list(reversed(received_values))
+
+
+class EmailContentGenerator:
+    """Generate the subject and bodies of an email."""
+
+    def __init__(self, faker: Faker) -> None:
+        self._faker = faker
+
+    def generate(self) -> tuple[str, str, str]:
+        subject = f"{self._faker.catch_phrase()} – {self._faker.bs()}"
+        paragraphs = self._faker.paragraphs(nb=3)
+
+        text_body = "\n\n".join(["Cześć,"] + paragraphs + [self._closing_signature()])
+        html_body = "".join(
+            [
+                "<html><body>",
+                "<p>Cześć,</p>",
+                *(f"<p>{paragraph}</p>" for paragraph in paragraphs),
+                f"<p>{self._closing_signature(html=True)}</p>",
+                "</body></html>",
+            ]
         )
-        received_values.append(value)
 
-    # Newest should appear at the top of the message => reverse
-    return list(reversed(received_values))
+        return subject, text_body, html_body
 
-
-def make_eml(
-    from_addr: str,
-    to_addr: str,
-    subject: str,
-    text_body: str,
-    html_body: str,
-    hops: int = 3,
-) -> EmailMessage:
-    msg = EmailMessage(policy=policy.SMTP)
-
-    # Core headers
-    msg["From"] = from_addr
-    msg["To"] = to_addr
-    msg["Subject"] = subject
-    msg["Date"] = format_datetime(datetime.now(timezone.utc))
-    msg["Message-ID"] = make_msgid(domain="example.net")
-    msg["MIME-Version"] = "1.0"
-
-    # Simulated "Received" chain (newest first)
-    for rcv in build_received_chain(helo="smtp-client.example.net", recipient=to_addr, hops=hops):
-        # print(type(rcv))
-        # msg.add_header("Received", rcv, charset="utf-8")
-        msg["Received"] = rcv
-
-    # Body as multipart/alternative
-    msg.set_content(text_body)  # text/plain
-    msg.add_alternative(html_body, subtype="html")  # text/html
-
-    return msg
+    def _closing_signature(self, *, html: bool = False) -> str:
+        closing = ["Pozdrawiam,", self._faker.company()]
+        if html:
+            return "<br/>".join(closing)
+        return "\n".join(closing)
 
 
-def write_eml(msg: EmailMessage, path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("wb") as f:
-        gen = BytesGenerator(f, policy=policy.SMTP, maxheaderlen=78)
-        gen.flatten(msg)
+class EmailAddressGenerator:
+    """Generate sender and recipient addresses."""
+
+    def __init__(self, faker: Faker) -> None:
+        self._faker = faker
+
+    def sender(self) -> str:
+        return self._build_address(domain=self._faker.domain_name())
+
+    def recipient(self) -> str:
+        return self._build_address(domain=self._faker.free_email_domain())
+
+    def pair(self) -> tuple[str, str]:
+        return self.sender(), self.recipient()
+
+    def _build_address(self, *, domain: str) -> str:
+        name = self._faker.name()
+        local_part = self._faker.user_name()
+        return f"{name} <{local_part}@{domain}>"
 
 
-if __name__ == "__main__":
-    eml = make_eml(
-        from_addr="Test Sender <sender@example.net>",
-        to_addr="recipient@example.com",
-        subject="Testowa wiadomość (bezpieczna) – powiadomienie",
-        text_body=(
-            "Cześć,\n\n"
-            "To jest bezpieczna, syntetyczna wiadomość do testów filtrów.\n"
-            "Nie zawiera linków ani złośliwych załączników.\n\n"
-            "Pozdrawiam,\nZespół Testów\n"
-        ),
-        html_body=(
-            "<html><body>"
-            "<p>Cześć,</p>"
-            "<p>To jest <b>bezpieczna</b>, syntetyczna wiadomość do testów filtrów.</p>"
-            "<p>Nie zawiera linków ani złośliwych załączników.</p>"
-            "<p>Pozdrawiam,<br/>Zespół Testów</p>"
-            "</body></html>"
-        ),
-        hops=4,
-    )
+class EmlWriter:
+    """Persist :class:`EmailMessage` objects as ``.eml`` files."""
 
-    out = Path("out") / "synthetic_test.eml"
-    write_eml(eml, out)
-    print(f"Wrote: {out.resolve()}")
+    def __init__(self, *, max_header_len: int = 78) -> None:
+        self.max_header_len = max_header_len
+
+    def write(self, msg: EmailMessage, path: Path | str) -> Path:
+        output_path = Path(path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with output_path.open("wb") as f:
+            generator = BytesGenerator(f, policy=policy.SMTP, maxheaderlen=self.max_header_len)
+            generator.flatten(msg)
+
+        return output_path
+
+
+class EmailGenerator:
+    """High-level orchestrator for synthetic EML generation."""
+
+    def __init__(
+        self,
+        *,
+        faker_locale: str = "pl_PL",
+        helo: str = "smtp-client.example.net",
+        hops: int = 3,
+    ) -> None:
+        self.faker = Faker(faker_locale)
+        self.received_builder = ReceivedChainBuilder(helo=helo, hops=hops)
+        self.address_generator = EmailAddressGenerator(self.faker)
+        self.content_generator = EmailContentGenerator(self.faker)
+
+    def create_message(
+        self,
+        *,
+        from_addr: str | None = None,
+        to_addr: str | None = None,
+        subject: str | None = None,
+        text_body: str | None = None,
+        html_body: str | None = None,
+        hops: int | None = None,
+    ) -> EmailMessage:
+        sender, recipient = self._resolve_addresses(from_addr, to_addr)
+        subject, text_body, html_body = self._resolve_content(subject, text_body, html_body)
+
+        msg = EmailMessage(policy=policy.SMTP)
+        msg["From"] = sender
+        msg["To"] = recipient
+        msg["Subject"] = subject
+        msg["Date"] = format_datetime(datetime.now(timezone.utc))
+        msg["Message-ID"] = make_msgid(domain="example.net")
+        msg["MIME-Version"] = "1.0"
+
+        for received_value in self.received_builder.build(recipient=recipient, hops=hops):
+            msg["Received"] = received_value
+
+        msg.set_content(text_body)
+        msg.add_alternative(html_body, subtype="html")
+
+        return msg
+
+    def _resolve_addresses(self, from_addr: str | None, to_addr: str | None) -> tuple[str, str]:
+        sender = from_addr or self.address_generator.sender()
+        recipient = to_addr or self.address_generator.recipient()
+        return sender, recipient
+
+    def _resolve_content(
+        self, subject: str | None, text_body: str | None, html_body: str | None
+    ) -> tuple[str, str, str]:
+        if subject is None or text_body is None or html_body is None:
+            generated_subject, generated_text, generated_html = self.content_generator.generate()
+            subject = subject or generated_subject
+            text_body = text_body or generated_text
+            html_body = html_body or generated_html
+
+        return subject, text_body, html_body
