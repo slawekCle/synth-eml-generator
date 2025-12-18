@@ -42,6 +42,7 @@ class EmailGenerator:
         msg["From"] = sender
         msg["To"] = recipient
         msg["Return-Path"] = f"<{self._extract_email_address(sender)}>"
+        msg["Reply-To"] = sender
         msg["Subject"] = subject
         msg["Date"] = format_datetime(datetime.now(timezone.utc))
         message_id_domain = (
@@ -51,6 +52,7 @@ class EmailGenerator:
         )
         msg["Message-ID"] = make_msgid(domain=message_id_domain)
         msg["MIME-Version"] = "1.0"
+        msg["X-Mailer"] = "synth-eml-generator"
 
         for received_value in self.received_builder.build(sender=sender, recipient=recipient, hops=hops):
             msg["Received"] = received_value
