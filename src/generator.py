@@ -85,7 +85,7 @@ class EmailGenerator:
         msg["Message-ID"] = make_msgid(domain="example.net")
         msg["MIME-Version"] = "1.0"
 
-        for received_value in self.received_builder.build(recipient=recipient, hops=hops):
+        for received_value in self.received_builder.build(sender=sender, recipient=recipient, hops=hops):
             msg["Received"] = received_value
 
         msg.set_content(text_body)
