@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from generator import EmailGenerator, EmlWriter
@@ -14,7 +15,7 @@ def parse_args() -> argparse.Namespace:
         "--output",
         type=Path,
         default=Path("out") / "synthetic_test.eml",
-        help="Ścieżka do wygenerowanego pliku .eml",
+        help="Ścieżka bazowa do wygenerowanego pliku .eml (znacznik czasowy zostanie dodany do nazwy pliku)",
     )
     parser.add_argument(
         "--hops",
@@ -34,6 +35,11 @@ def parse_args() -> argparse.Namespace:
         help="Ścieżka do pliku szablonu wiadomości (JSON)",
     )
     return parser.parse_args()
+
+
+def timestamped_output_path(base_path: Path) -> Path:
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return base_path.with_name(f"{base_path.stem}_{timestamp}{base_path.suffix}")
 
 
 def load_template(template_path: Path) -> tuple[str, str, str]:
@@ -80,7 +86,7 @@ def main() -> None:
     )
 
     writer = EmlWriter()
-    output_path = writer.write(message, args.output)
+    output_path = writer.write(message, timestamped_output_path(args.output))
 
     print(f"Wrote: {output_path.resolve()}")
 
