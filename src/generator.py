@@ -43,7 +43,12 @@ class EmailGenerator:
         msg["To"] = recipient
         msg["Subject"] = subject
         msg["Date"] = format_datetime(datetime.now(timezone.utc))
-        msg["Message-ID"] = make_msgid(domain="example.net")
+        message_id_domain = (
+            ReceivedChainBuilder._extract_domain(sender)
+            or ReceivedChainBuilder._domain_from_hostname(self.received_builder.default_helo)
+            or "example.net"
+        )
+        msg["Message-ID"] = make_msgid(domain=message_id_domain)
         msg["MIME-Version"] = "1.0"
 
         for received_value in self.received_builder.build(sender=sender, recipient=recipient, hops=hops):

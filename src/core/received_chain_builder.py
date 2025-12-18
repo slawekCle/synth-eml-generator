@@ -3,6 +3,7 @@ from __future__ import annotations
 import secrets
 from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime, parseaddr
+from ipaddress import IPv4Address
 
 
 class ReceivedChainBuilder:
@@ -33,11 +34,10 @@ class ReceivedChainBuilder:
         effective_start = start_time or datetime.now(timezone.utc)
         hop_count = hops if hops is not None else self.hops
 
-        doc_ipv4 = ["192.0.2.10", "198.51.100.23", "203.0.113.77", "198.51.100.87"]
-
         sender_domain = self._extract_domain(sender) or self._domain_from_hostname(self.default_helo) or "example.net"
         recipient_domain = self._extract_domain(recipient) or sender_domain
         host_chain = self._build_host_chain(sender_domain, recipient_domain, hop_count)
+        ip_chain = self._generate_public_ips(hop_count)
 
         timestamp = effective_start - timedelta(minutes=2 * hop_count)
         received_values: list[str] = []
@@ -47,7 +47,7 @@ class ReceivedChainBuilder:
             from_host = host_chain[i]
             by_host = host_chain[i + 1]
             helo_value = from_host or self.default_helo
-            ip = doc_ipv4[i % len(doc_ipv4)]
+            ip = ip_chain[i]
             esmtp_id = secrets.token_hex(6)
 
             value = (
@@ -88,3 +88,21 @@ class ReceivedChainBuilder:
                 host_chain.append(f"smtp{idx + 1}.{sender_domain}")
 
         return host_chain
+
+    def _generate_public_ips(self, count: int) -> list[str]:
+        ips: list[str] = []
+        seen: set[str] = set()
+
+        while len(ips) < count:
+            candidate = IPv4Address(secrets.randbits(32))
+            if not candidate.is_global:
+                continue
+
+            as_text = str(candidate)
+            if as_text in seen:
+                continue
+
+            ips.append(as_text)
+            seen.add(as_text)
+
+        return ips
