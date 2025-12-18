@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
         "-t",
         "--template",
         type=Path,
+        required=True,
         help="Ścieżka do pliku szablonu wiadomości (JSON)",
     )
     return parser.parse_args()
@@ -65,18 +66,13 @@ def load_template(template_path: Path) -> tuple[str, str, str]:
 def main() -> None:
     args = parse_args()
 
-    template_subject: str | None = None
-    template_text: str | None = None
-    template_html: str | None = None
+    if not args.template.is_file():
+        raise SystemExit(f"Plik szablonu nie istnieje: {args.template}")
 
-    if args.template is not None:
-        if not args.template.is_file():
-            raise SystemExit(f"Plik szablonu nie istnieje: {args.template}")
-
-        try:
-            template_subject, template_text, template_html = load_template(args.template)
-        except ValueError as exc:
-            raise SystemExit(f"Nie udało się wczytać szablonu: {exc}") from exc
+    try:
+        template_subject, template_text, template_html = load_template(args.template)
+    except ValueError as exc:
+        raise SystemExit(f"Nie udało się wczytać szablonu: {exc}") from exc
 
     generator = EmailGenerator(faker_locale=args.locale, hops=args.hops)
     message = generator.create_message(

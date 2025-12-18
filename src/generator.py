@@ -63,36 +63,6 @@ class ReceivedChainBuilder:
         return list(reversed(received_values))
 
 
-class EmailContentGenerator:
-    """Generate the subject and bodies of an email."""
-
-    def __init__(self, faker: Faker) -> None:
-        self._faker = faker
-
-    def generate(self) -> tuple[str, str, str]:
-        subject = f"{self._faker.catch_phrase()} – {self._faker.bs()}"
-        paragraphs = self._faker.paragraphs(nb=3)
-
-        text_body = "\n\n".join(["Cześć,"] + paragraphs + [self._closing_signature()])
-        html_body = "".join(
-            [
-                "<html><body>",
-                "<p>Cześć,</p>",
-                *(f"<p>{paragraph}</p>" for paragraph in paragraphs),
-                f"<p>{self._closing_signature(html=True)}</p>",
-                "</body></html>",
-            ]
-        )
-
-        return subject, text_body, html_body
-
-    def _closing_signature(self, *, html: bool = False) -> str:
-        closing = ["Pozdrawiam,", self._faker.company()]
-        if html:
-            return "<br/>".join(closing)
-        return "\n".join(closing)
-
-
 class EmailAddressGenerator:
     """Generate sender and recipient addresses."""
 
@@ -144,20 +114,19 @@ class EmailGenerator:
         self.faker = Faker(faker_locale)
         self.received_builder = ReceivedChainBuilder(helo=helo, hops=hops)
         self.address_generator = EmailAddressGenerator(self.faker)
-        self.content_generator = EmailContentGenerator(self.faker)
 
     def create_message(
         self,
         *,
         from_addr: str | None = None,
         to_addr: str | None = None,
-        subject: str | None = None,
-        text_body: str | None = None,
-        html_body: str | None = None,
+        subject: str,
+        text_body: str,
+        html_body: str,
         hops: int | None = None,
     ) -> EmailMessage:
         sender, recipient = self._resolve_addresses(from_addr, to_addr)
-        subject, text_body, html_body = self._resolve_content(subject, text_body, html_body)
+        self._validate_content(subject, text_body, html_body)
 
         msg = EmailMessage(policy=policy.SMTP)
         msg["From"] = sender
@@ -180,13 +149,6 @@ class EmailGenerator:
         recipient = to_addr or self.address_generator.recipient()
         return sender, recipient
 
-    def _resolve_content(
-        self, subject: str | None, text_body: str | None, html_body: str | None
-    ) -> tuple[str, str, str]:
-        if subject is None or text_body is None or html_body is None:
-            generated_subject, generated_text, generated_html = self.content_generator.generate()
-            subject = subject or generated_subject
-            text_body = text_body or generated_text
-            html_body = html_body or generated_html
-
-        return subject, text_body, html_body
+    def _validate_content(self, subject: str, text_body: str, html_body: str) -> None:
+        if not all(isinstance(value, str) for value in (subject, text_body, html_body)):
+            raise TypeError("Treść wiadomości musi być typu string")
