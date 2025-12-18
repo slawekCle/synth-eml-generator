@@ -9,7 +9,7 @@ from pathlib import Path
 
 from faker import Faker
 
-from received_chain_builder import ReceivedChainBuilder
+from core.received_chain_builder import ReceivedChainBuilder
 
 
 class EmailAddressGenerator:
