@@ -1,5 +1,5 @@
 {
-  "subject": "Przykładowy tytuł",
-  "text": "Treść maila",
-  "html": "<p>Treść maila</p>"
+  "subject": "Wspomnienia z wyjazdu",
+  "text": "Cześć,\nostatni wyjazd był bardzo udany i spokojny.\nPogoda dopisała, a trasa była łatwa.\nChętnie powtórzyłbym taki wyjazd.",
+  "html": "<b>Cześć</b>,\n<p>ostatni wyjazd był bardzo udany i spokojny.\nPogoda dopisała, a trasa była łatwa.\nChętnie powtórzyłbym taki wyjazd.</p>"
 }

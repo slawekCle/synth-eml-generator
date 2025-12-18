@@ -52,7 +52,7 @@ class EmailGenerator:
         )
         msg["Message-ID"] = make_msgid(domain=message_id_domain)
         msg["MIME-Version"] = "1.0"
-        msg["X-Mailer"] = "synth-eml-generator"
+        msg["X-Mailer"] = "Microsoft Outlook 16.0"
 
         for received_value in self.received_builder.build(sender=sender, recipient=recipient, hops=hops):
             msg["Received"] = received_value
