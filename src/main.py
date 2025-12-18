@@ -5,7 +5,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from generator import EmailGenerator, EmlWriter
+from eml_writer import EmlWriter
+from generator import EmailGenerator
 
 
 def parse_args() -> argparse.Namespace:

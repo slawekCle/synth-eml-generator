@@ -2,52 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from email import policy
-from email.generator import BytesGenerator
 from email.message import EmailMessage
 from email.utils import format_datetime, make_msgid
-from pathlib import Path
 
 from faker import Faker
 
 from core.received_chain_builder import ReceivedChainBuilder
-
-
-class EmailAddressGenerator:
-    """Generate sender and recipient addresses."""
-
-    def __init__(self, faker: Faker) -> None:
-        self._faker = faker
-
-    def sender(self) -> str:
-        return self._build_address(domain=self._faker.domain_name())
-
-    def recipient(self) -> str:
-        return self._build_address(domain=self._faker.free_email_domain())
-
-    def pair(self) -> tuple[str, str]:
-        return self.sender(), self.recipient()
-
-    def _build_address(self, *, domain: str) -> str:
-        name = self._faker.name()
-        local_part = self._faker.user_name()
-        return f"{name} <{local_part}@{domain}>"
-
-
-class EmlWriter:
-    """Persist :class:`EmailMessage` objects as ``.eml`` files."""
-
-    def __init__(self, *, max_header_len: int = 78) -> None:
-        self.max_header_len = max_header_len
-
-    def write(self, msg: EmailMessage, path: Path | str) -> Path:
-        output_path = Path(path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with output_path.open("wb") as f:
-            generator = BytesGenerator(f, policy=policy.SMTP, maxheaderlen=self.max_header_len)
-            generator.flatten(msg)
-
-        return output_path
+from email_address_generator import EmailAddressGenerator
 
 
 class EmailGenerator:
