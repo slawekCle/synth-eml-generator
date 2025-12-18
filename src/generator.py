@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from email import policy
 from email.message import EmailMessage
-from email.utils import format_datetime, make_msgid
+from email.utils import format_datetime, make_msgid, parseaddr
 
 from faker import Faker
 
@@ -41,6 +41,7 @@ class EmailGenerator:
         msg = EmailMessage(policy=policy.SMTP)
         msg["From"] = sender
         msg["To"] = recipient
+        msg["Return-Path"] = f"<{self._extract_email_address(sender)}>"
         msg["Subject"] = subject
         msg["Date"] = format_datetime(datetime.now(timezone.utc))
         message_id_domain = (
@@ -67,3 +68,8 @@ class EmailGenerator:
     def _validate_content(self, subject: str, text_body: str, html_body: str) -> None:
         if not all(isinstance(value, str) for value in (subject, text_body, html_body)):
             raise TypeError("Treść wiadomości musi być typu string")
+
+    @staticmethod
+    def _extract_email_address(address: str) -> str:
+        _, email_addr = parseaddr(address)
+        return email_addr or address
