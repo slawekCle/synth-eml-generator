@@ -18,3 +18,10 @@ Uruchomienie z szablonem:
 ```bash
 python src/main.py -t template.json
 ```
+
+# Dostępne datasety
+## simple
+Proste, poprawne i niestanonwiące zagrożenia wiadomości bez linków i załaczników.
+
+## korpo
+Stylizowane na wiadomość wewnątrzkorporacyjne.
