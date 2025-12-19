@@ -1,0 +1,5 @@
+{
+  "subject": "Szybki plan na weekend zależny od pogody",
+  "text": "Hej! Zanim zaplanujesz weekend, warto zerknąć na prognozę, bo potrafi uratować plan dnia. Ja lubię mieć wariant A i B: spacer, a w razie deszczu kawiarnia albo kino. Jeśli chcesz, sprawdź prognozę tutaj: https://www.meteo.pl\n lub https://www.weather.com\n. Daj znać, jaki wariant wybierasz!",
+  "html": "<p>Hej! Zanim zaplanujesz weekend, warto zerknąć na prognozę, bo potrafi uratować plan dnia.</p>\n<p>Ja lubię mieć wariant A i B: spacer, a w razie deszczu kawiarnia albo kino.</p>\n<p>Jeśli chcesz, sprawdź prognozę tutaj: <a href=\"https://www.meteo.pl\">meteo.pl</a> lub <a href=\"https://www.weather.com\">weather.com</a>.</p>\n<p>Daj znać, jaki wariant wybierasz!</p>"
+}
