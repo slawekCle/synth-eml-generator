@@ -1,0 +1,5 @@
+{
+  "subject": "Znaczenie regularnych podsumowań",
+  "text": "Dzień dobry, regularne podsumowania ułatwiają ocenę postępów. Pozwalają szybciej reagować na zmiany i ryzyka. Nawet krótkie zestawienie bywa bardzo pomocne. Dobre praktyki opisano na https://www.atlassian.com. Warto wprowadzić je do rutyny.",
+  "html": "<p>Dzień dobry, regularne podsumowania ułatwiają ocenę postępów.</p><p>Pozwalają szybciej reagować na zmiany.</p><p>Nawet krótkie zestawienie bywa pomocne.</p><p>Dobre praktyki opisano na <a href=\"https://www.atlassian.com\">Atlassian</a>.</p><p>Warto wprowadzić je do rutyny.</p>"
+}
